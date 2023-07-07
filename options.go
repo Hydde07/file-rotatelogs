@@ -89,7 +89,8 @@ func ForceNewFile() Option {
 	return option.New(optkeyForceNewFile, true)
 }
 
-// Compression enables gzip compression of rotated files
-func Compression() Option {
-	return option.New(optkeyCompression, true)
+// WithCompression creates a new Option that specifies whether
+// to compress the rotated files, the default is false
+func WithCompression(b bool) Option {
+	return option.New(optkeyCompression, b)
 }
