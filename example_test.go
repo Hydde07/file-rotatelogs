@@ -2,14 +2,13 @@ package rotatelogs_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	rotatelogs "github.com/hydde/file-rotatelogs"
 )
 
 func ExampleForceNewFile() {
-	logDir, err := ioutil.TempDir("", "rotatelogs_test")
+	logDir, err := os.MkdirTemp("", "rotatelogs_test")
 	if err != nil {
 		fmt.Println("could not create log directory ", err)
 
@@ -41,14 +40,19 @@ func ExampleForceNewFile() {
 		}
 	}
 
-	files, err := ioutil.ReadDir(logDir)
+	files, err := os.ReadDir(logDir)
 	if err != nil {
 		fmt.Println("ReadDir failed ", err)
 
 		return
 	}
 	for _, file := range files {
-		fmt.Println(file.Name(), file.Size())
+		info, err := file.Info()
+		if err != nil {
+			fmt.Println("Info failed ", err)
+			return
+		}
+		fmt.Println(file.Name(), info.Size())
 	}
 
 	err = os.RemoveAll(logDir)
