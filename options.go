@@ -3,7 +3,7 @@ package rotatelogs
 import (
 	"time"
 
-	"github.com/lestrrat-go/file-rotatelogs/internal/option"
+	"github.com/hydde/file-rotatelogs/internal/option"
 )
 
 const (
@@ -15,6 +15,7 @@ const (
 	optkeyRotationSize  = "rotation-size"
 	optkeyRotationCount = "rotation-count"
 	optkeyForceNewFile  = "force-new-file"
+	optkeyCompression   = "compression"
 )
 
 // WithClock creates a new Option that sets a clock
@@ -86,4 +87,10 @@ func WithHandler(h Handler) Option {
 // rotation is performed
 func ForceNewFile() Option {
 	return option.New(optkeyForceNewFile, true)
+}
+
+// WithCompression creates a new Option that specifies whether
+// to compress the rotated files, the default is false
+func WithCompression(b bool) Option {
+	return option.New(optkeyCompression, b)
 }

@@ -47,6 +47,7 @@ type RotateLogs struct {
 	rotationTime  time.Duration
 	rotationSize  int64
 	rotationCount uint
+	compress      bool
 	forceNewFile  bool
 }
 
