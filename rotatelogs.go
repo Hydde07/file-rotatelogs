@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hydde/file-rotatelogs/internal/fileutil"
+	"github.com/Hydde07/file-rotatelogs/internal/fileutil"
 	strftime "github.com/lestrrat-go/strftime"
 	"github.com/pkg/errors"
 )

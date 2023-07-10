@@ -3,7 +3,7 @@ package rotatelogs
 import (
 	"time"
 
-	"github.com/hydde/file-rotatelogs/internal/option"
+	"github.com/Hydde07/file-rotatelogs/internal/option"
 )
 
 const (
