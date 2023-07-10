@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"compress/gzip"
 	"os"
 	"path/filepath"
 	"time"
@@ -55,4 +56,33 @@ func CreateFile(filename string) (*os.File, error) {
 	}
 
 	return fh, nil
+}
+
+// CompressFile compresses a file
+func CompressFile(filePath string) error {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(filePath + ".gz")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := gzip.NewWriter(f)
+	defer w.Close()
+
+	_, err = w.Write(content)
+	if err != nil {
+		return err
+	}
+
+	// remove original file
+	if err := os.Remove(filePath); err != nil {
+		return err
+	}
+
+	return nil
 }

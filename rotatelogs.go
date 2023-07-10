@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lestrrat-go/file-rotatelogs/internal/fileutil"
+	"github.com/hydde/file-rotatelogs/internal/fileutil"
 	strftime "github.com/lestrrat-go/strftime"
 	"github.com/pkg/errors"
 )
@@ -43,6 +43,7 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 	var linkName string
 	var maxAge time.Duration
 	var handler Handler
+	var compress bool
 	var forceNewFile bool
 
 	for _, o := range options {
@@ -72,6 +73,8 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 			handler = o.Value().(Handler)
 		case optkeyForceNewFile:
 			forceNewFile = true
+		case optkeyCompression:
+			compress = true
 		}
 	}
 
@@ -95,6 +98,7 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		rotationSize:  rotationSize,
 		rotationCount: rotationCount,
 		forceNewFile:  forceNewFile,
+		compress:      compress,
 	}, nil
 }
 
@@ -134,6 +138,14 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 	}
 
 	if baseFn != rl.curBaseFn {
+		if rl.compress {
+			// If compression is enabled, compress the previous file after it's rotated
+			if rl.curFn != "" {
+				go func(oldFile string) {
+					fileutil.CompressFile(oldFile)
+				}(rl.curFn)
+			}
+		}
 		generation = 0
 		// even though this is the first write after calling New(),
 		// check if a new file needs to be created
