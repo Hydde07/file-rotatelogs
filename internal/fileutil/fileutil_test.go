@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hydde/file-rotatelogs/internal/fileutil"
+	"github.com/Hydde07/file-rotatelogs/internal/fileutil"
 	"github.com/jonboulle/clockwork"
 	"github.com/lestrrat-go/strftime"
 	"github.com/stretchr/testify/assert"

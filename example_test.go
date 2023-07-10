@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	rotatelogs "github.com/hydde/file-rotatelogs"
+	rotatelogs "github.com/Hydde07/file-rotatelogs"
 )
 
 func ExampleForceNewFile() {

@@ -1,4 +1,4 @@
-module github.com/hydde/file-rotatelogs
+module github.com/Hydde07/file-rotatelogs
 
 go 1.20
 
