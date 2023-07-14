@@ -76,6 +76,8 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		case optkeyCompression:
 			globPattern = fmt.Sprintf("%s.gz", globPattern)
 			compress = true
+		case optKeyGlobExtension:
+			globPattern = fmt.Sprintf("%s%s", globPattern, o.Value().(string))
 		}
 	}
 

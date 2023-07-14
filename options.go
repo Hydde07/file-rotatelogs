@@ -16,6 +16,7 @@ const (
 	optkeyRotationCount = "rotation-count"
 	optkeyForceNewFile  = "force-new-file"
 	optkeyCompression   = "compression"
+	optKeyGlobExtension = "blob-extension"
 )
 
 // WithClock creates a new Option that sets a clock
@@ -93,4 +94,11 @@ func ForceNewFile() Option {
 // to compress the rotated files, the default is false
 func WithCompression(b bool) Option {
 	return option.New(optkeyCompression, b)
+}
+
+// WithGlobExtension creates a new Option that specifies the
+// extension of the rotated files, the default is empty for normal
+// logs and ".gz" for compressed files
+func WithGlobExtension(s string) Option {
+	return option.New(optKeyGlobExtension, s)
 }
