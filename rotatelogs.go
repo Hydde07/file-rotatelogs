@@ -74,6 +74,7 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		case optkeyForceNewFile:
 			forceNewFile = true
 		case optkeyCompression:
+			globPattern = fmt.Sprintf("%s.gz", globPattern)
 			compress = true
 		}
 	}
@@ -144,6 +145,7 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 				go func(oldFile string) {
 					fileutil.CompressFile(oldFile)
 				}(rl.curFn)
+				previousFn = previousFn + ".gz"
 			}
 		}
 		generation = 0

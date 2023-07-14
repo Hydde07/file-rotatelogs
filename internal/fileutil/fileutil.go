@@ -79,5 +79,10 @@ func CompressFile(filePath string) error {
 		return err
 	}
 
+	err = os.Remove(filePath)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
