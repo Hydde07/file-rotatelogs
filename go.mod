@@ -1,6 +1,6 @@
 module github.com/Hydde07/file-rotatelogs
 
-go 1.16
+go 1.12
 
 require (
 	github.com/jonboulle/clockwork v0.4.0
