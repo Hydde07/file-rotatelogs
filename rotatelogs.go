@@ -145,7 +145,6 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 					fileutil.CompressFile(oldFile)
 				}(rl.curFn)
 			}
-			previousFn = previousFn + ".gz"
 		}
 		generation = 0
 		// even though this is the first write after calling New(),
