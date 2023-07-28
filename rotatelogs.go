@@ -141,7 +141,7 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 	// This filename contains the name of the "NEW" filename
 	// to log to, which may be newer than rl.currentFilename
 	baseFn := fileutil.GenerateFn(rl.pattern, rl.clock, rl.rotationTime)
-	filename := baseFn
+	filename := baseFn + "(TEMP-NAME)"
 	var forceNewFile bool
 
 	fi, err := os.Stat(rl.curFn)
@@ -218,6 +218,8 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 		}
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 	}
+
+	filename = strings.TrimSuffix(filename, "(TEMP-NAME)")
 
 	rl.outFh.Close()
 	rl.outFh = fh
