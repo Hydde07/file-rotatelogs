@@ -19,6 +19,7 @@ const (
 	optKeyGlobExtension       = "blob-extension"
 	optKeyTimeOnCompression   = "time-on-compression"
 	optKeySuffixOnCompression = "suffix-on-compression"
+	optKeyChangeGlobPattern   = "change-glob-pattern"
 )
 
 // WithClock creates a new Option that sets a clock
@@ -116,4 +117,11 @@ func WithTimeOnCompression(b bool) Option {
 // is empty
 func WithSuffixOnCompression(s string) Option {
 	return option.New(optKeySuffixOnCompression, s)
+}
+
+// WithChangeGlobPattern creates a new Option that specifies a new
+// glob pattern for the rotated files, the default is empty, which
+// means the glob pattern is the same as the base file name
+func WithChangeGlobPattern(b string) Option {
+	return option.New(optKeyChangeGlobPattern, b)
 }

@@ -75,6 +75,8 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 			handler = o.Value().(Handler)
 		case optkeyForceNewFile:
 			forceNewFile = true
+		case optKeyChangeGlobPattern:
+			globPattern = o.Value().(string)
 		case optkeyCompression:
 			globPattern = fmt.Sprintf("%s.gz", globPattern)
 			compress = true
