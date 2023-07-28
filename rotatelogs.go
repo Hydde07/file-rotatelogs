@@ -45,6 +45,8 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 	var handler Handler
 	var compress bool
 	var forceNewFile bool
+	var timeOnCompression bool
+	var suffixOnCompression string
 
 	for _, o := range options {
 		switch o.Name() {
@@ -78,7 +80,12 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 			compress = true
 		case optKeyGlobExtension:
 			globPattern = fmt.Sprintf("%s%s", globPattern, o.Value().(string))
+		case optKeyTimeOnCompression:
+			timeOnCompression = true
+		case optKeySuffixOnCompression:
+			suffixOnCompression = o.Value().(string)
 		}
+
 	}
 
 	if maxAge > 0 && rotationCount > 0 {
@@ -91,17 +98,19 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 	}
 
 	return &RotateLogs{
-		clock:         clock,
-		eventHandler:  handler,
-		globPattern:   globPattern,
-		linkName:      linkName,
-		maxAge:        maxAge,
-		pattern:       pattern,
-		rotationTime:  rotationTime,
-		rotationSize:  rotationSize,
-		rotationCount: rotationCount,
-		forceNewFile:  forceNewFile,
-		compress:      compress,
+		clock:               clock,
+		eventHandler:        handler,
+		globPattern:         globPattern,
+		linkName:            linkName,
+		maxAge:              maxAge,
+		pattern:             pattern,
+		rotationTime:        rotationTime,
+		rotationSize:        rotationSize,
+		rotationCount:       rotationCount,
+		forceNewFile:        forceNewFile,
+		compress:            compress,
+		timeOnCompression:   timeOnCompression,
+		suffixOnCompression: suffixOnCompression,
 	}, nil
 }
 
@@ -145,7 +154,7 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 			// If compression is enabled, compress the previous file after it's rotated
 			if rl.curFn != "" {
 				go func(oldFile string) {
-					fileutil.CompressFile(oldFile)
+					fileutil.CompressFile(oldFile, rl.suffixOnCompression, rl.timeOnCompression)
 				}(rl.curFn)
 				previousFn = previousFn + ".gz"
 			}

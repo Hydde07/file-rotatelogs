@@ -2,6 +2,7 @@ package fileutil
 
 import (
 	"compress/gzip"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -59,13 +60,22 @@ func CreateFile(filename string) (*os.File, error) {
 }
 
 // CompressFile compresses a file
-func CompressFile(filePath string) error {
+func CompressFile(filePath string, fileSuffix string, withTime bool) error {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 
-	f, err := os.Create(filePath + ".gz")
+	var timeOnFile string
+	if withTime {
+		timeOnFile = time.Now().Format("2006-01-02")
+		timeOnFile = fmt.Sprintf("-%s", timeOnFile)
+	}
+	if fileSuffix != "" {
+		fileSuffix = fmt.Sprintf("-%s", fileSuffix)
+	}
+
+	f, err := os.Create(filePath + timeOnFile + fileSuffix + ".gz")
 	if err != nil {
 		return err
 	}

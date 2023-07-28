@@ -7,16 +7,18 @@ import (
 )
 
 const (
-	optkeyClock         = "clock"
-	optkeyHandler       = "handler"
-	optkeyLinkName      = "link-name"
-	optkeyMaxAge        = "max-age"
-	optkeyRotationTime  = "rotation-time"
-	optkeyRotationSize  = "rotation-size"
-	optkeyRotationCount = "rotation-count"
-	optkeyForceNewFile  = "force-new-file"
-	optkeyCompression   = "compression"
-	optKeyGlobExtension = "blob-extension"
+	optkeyClock               = "clock"
+	optkeyHandler             = "handler"
+	optkeyLinkName            = "link-name"
+	optkeyMaxAge              = "max-age"
+	optkeyRotationTime        = "rotation-time"
+	optkeyRotationSize        = "rotation-size"
+	optkeyRotationCount       = "rotation-count"
+	optkeyForceNewFile        = "force-new-file"
+	optkeyCompression         = "compression"
+	optKeyGlobExtension       = "blob-extension"
+	optKeyTimeOnCompression   = "time-on-compression"
+	optKeySuffixOnCompression = "suffix-on-compression"
 )
 
 // WithClock creates a new Option that sets a clock
@@ -101,4 +103,17 @@ func WithCompression(b bool) Option {
 // logs and ".gz" for compressed files
 func WithGlobExtension(s string) Option {
 	return option.New(optKeyGlobExtension, s)
+}
+
+// WithTimeOnCompression creates a new Option that specifies whether
+// to add the time on the compressed file, the default is false
+func WithTimeOnCompression(b bool) Option {
+	return option.New(optKeyTimeOnCompression, b)
+}
+
+// WithSuffixOnCompression creates a new Option that specifies the
+// suffix of the rotated files if compression is enabled, the default
+// is empty
+func WithSuffixOnCompression(s string) Option {
+	return option.New(optKeySuffixOnCompression, s)
 }
