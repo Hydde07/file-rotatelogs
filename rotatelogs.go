@@ -220,7 +220,7 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 	}
 
-	filename = strings.TrimSuffix(filename, "(TEMP-NAME)")
+	baseFn = strings.TrimSuffix(baseFn, "(TEMP-NAME)")
 
 	rl.outFh.Close()
 	rl.outFh = fh
