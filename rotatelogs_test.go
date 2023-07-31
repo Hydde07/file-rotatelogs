@@ -83,6 +83,12 @@ func TestLogRotate(t *testing.T) {
 				return append(options, rotatelogs.WithCompression(true), rotatelogs.WithMaxAge(30*24*time.Hour))
 			},
 		},
+		{
+			Name: "With Compress and Suffix",
+			FixArgs: func(options []rotatelogs.Option, dir string) []rotatelogs.Option {
+				return append(options, rotatelogs.WithCompression(true), rotatelogs.WithMaxAge(30*24*time.Hour), rotatelogs.WithSuffixOnCompression("thisIsTheStringToSearchFor"))
+			},
+		},
 	}
 
 	for i, tc := range testCases {
@@ -105,7 +111,15 @@ func TestLogRotate(t *testing.T) {
 				options = fn(options, dir)
 			}
 
-			rl, err := rotatelogs.New(filepath.Join(dir, "log%Y%m%d%H%M%S"), options...)
+			var filename string
+
+			if tc.Name == "With Compress and Suffix" {
+				filename = "TesteLog"
+			} else {
+				filename = "log%Y%m%d%H%M%S"
+			}
+
+			rl, err := rotatelogs.New(filepath.Join(dir, filename), options...)
 			if !assert.NoError(t, err, `rotatelogs.New should succeed`) {
 				return
 			}
@@ -159,7 +173,6 @@ func TestLogRotate(t *testing.T) {
 
 			if tc.Name == "With Compress" {
 				oldLogFileName := oldFn + ".gz"
-				time.Sleep(3 * time.Second)
 				if _, err := os.Stat(oldLogFileName); os.IsNotExist(err) {
 					t.Errorf("Old log file was not compressed: %s", oldLogFileName)
 					//search all files in the directory
@@ -176,7 +189,7 @@ func TestLogRotate(t *testing.T) {
 				}
 			}
 
-			if newfn == fn {
+			if newfn == fn && tc.Name != "With Compress and Suffix" {
 				t.Errorf(`New file name and old file name should not match ("%s" != "%s")`, fn, newfn)
 			}
 
@@ -186,7 +199,7 @@ func TestLogRotate(t *testing.T) {
 			}
 
 			if string(content) != str {
-				t.Errorf(`File content does not match (was "%s")`, content)
+				t.Errorf(`File content does not match (was "%s" instead of "%s")`, content, str)
 			}
 
 			time.Sleep(time.Second)
@@ -194,8 +207,10 @@ func TestLogRotate(t *testing.T) {
 			// fn was declared above, before mocking CurrentTime
 			// Old files should have been unlinked
 			_, err = os.Stat(fn)
-			if !assert.Error(t, err, "os.Stat should have failed") {
-				return
+			if tc.Name != "With Compress and Suffix" {
+				if !assert.Error(t, err, "os.Stat should have failed") {
+					return
+				}
 			}
 
 			if fn := tc.CheckExtras; fn != nil {

@@ -163,9 +163,7 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 		if rl.compress {
 			// If compression is enabled, compress the previous file after it's rotated
 			if rl.curFn != "" {
-				go func(oldFile string) {
-					fileutil.CompressFile(oldFile, rl.suffixOnCompression, rl.timeOnCompression)
-				}(rl.curFn)
+				fileutil.CompressFile(rl.curFn, rl.suffixOnCompression, rl.timeOnCompression)
 				previousFn = previousFn + ".gz"
 			}
 		}
