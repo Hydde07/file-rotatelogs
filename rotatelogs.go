@@ -31,7 +31,12 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		globPattern = re.ReplaceAllString(globPattern, "*")
 	}
 
-	pattern, err := strftime.New(p)
+	filenamePattern, err := strftime.New(p)
+	if err != nil {
+		return nil, errors.Wrap(err, `invalid strftime pattern`)
+	}
+
+	rotationPattern, err := strftime.New("%Y%m%d%H%M%S")
 	if err != nil {
 		return nil, errors.Wrap(err, `invalid strftime pattern`)
 	}
@@ -105,7 +110,7 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		globPattern:         globPattern,
 		linkName:            linkName,
 		maxAge:              maxAge,
-		pattern:             pattern,
+		filenamePattern:     filenamePattern,
 		rotationTime:        rotationTime,
 		rotationSize:        rotationSize,
 		rotationCount:       rotationCount,
@@ -113,6 +118,7 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		compress:            compress,
 		timeOnCompression:   timeOnCompression,
 		suffixOnCompression: suffixOnCompression,
+		rotationPattern:     rotationPattern,
 	}, nil
 }
 
@@ -140,9 +146,10 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 
 	// This filename contains the name of the "NEW" filename
 	// to log to, which may be newer than rl.currentFilename
-	baseFn := fileutil.GenerateFn(rl.pattern, rl.clock, rl.rotationTime)
+	baseFn := fileutil.GenerateFn(rl.filenamePattern, rl.clock, rl.rotationTime)
+	baseRn := fileutil.GenerateFn(rl.rotationPattern, rl.clock, rl.rotationTime)
+
 	filename := baseFn
-	baseFn = baseFn + "(TEMP-NAME)"
 	var forceNewFile bool
 
 	fi, err := os.Stat(rl.curFn)
@@ -152,7 +159,7 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 		sizeRotation = true
 	}
 
-	if baseFn != rl.curBaseFn {
+	if baseFn != rl.curBaseFn || baseRn != rl.curBaseRn {
 		if rl.compress {
 			// If compression is enabled, compress the previous file after it's rotated
 			if rl.curFn != "" {
@@ -220,11 +227,11 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 	}
 
-	baseFn = strings.TrimSuffix(baseFn, "(TEMP-NAME)")
-
 	rl.outFh.Close()
 	rl.outFh = fh
 	rl.curBaseFn = baseFn
+	rl.curBaseRn = baseRn
+	rl.curRn = baseRn
 	rl.curFn = filename
 	rl.generation = generation
 

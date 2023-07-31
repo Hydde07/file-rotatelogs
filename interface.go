@@ -35,7 +35,9 @@ type FileRotatedEvent struct {
 type RotateLogs struct {
 	clock               Clock
 	curFn               string
+	curRn               string
 	curBaseFn           string
+	curBaseRn           string
 	globPattern         string
 	generation          int
 	linkName            string
@@ -43,7 +45,8 @@ type RotateLogs struct {
 	mutex               sync.RWMutex
 	eventHandler        Handler
 	outFh               *os.File
-	pattern             *strftime.Strftime
+	filenamePattern     *strftime.Strftime
+	rotationPattern     *strftime.Strftime
 	rotationTime        time.Duration
 	rotationSize        int64
 	rotationCount       uint
