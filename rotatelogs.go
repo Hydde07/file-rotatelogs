@@ -27,10 +27,6 @@ func (c clockFn) Now() time.Time {
 // must be passed. Optional `Option` parameters may be passed
 func New(p string, options ...Option) (*RotateLogs, error) {
 	globPattern := p
-	for _, re := range patternConversionRegexps {
-		globPattern = re.ReplaceAllString(globPattern, "*")
-	}
-
 	filenamePattern, err := strftime.New(p)
 	if err != nil {
 		return nil, errors.Wrap(err, `invalid strftime pattern`)
@@ -93,6 +89,9 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 			suffixOnCompression = o.Value().(string)
 		}
 
+	}
+	for _, re := range patternConversionRegexps {
+		globPattern = re.ReplaceAllString(globPattern, "*")
 	}
 
 	if maxAge > 0 && rotationCount > 0 {
