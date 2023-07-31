@@ -68,7 +68,7 @@ func CompressFile(filePath string, fileSuffix string, withTime bool) error {
 
 	var timeOnFile string
 	if withTime {
-		timeOnFile = time.Now().Format("2006-01-02")
+		timeOnFile = time.Now().Format("2006-01-02_15-04")
 		timeOnFile = fmt.Sprintf("-%s", timeOnFile)
 	}
 	if fileSuffix != "" {
