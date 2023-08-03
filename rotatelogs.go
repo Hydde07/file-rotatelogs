@@ -48,7 +48,7 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 	var forceNewFile bool
 	var timeOnCompression bool
 	var suffixOnCompression string
-	var rotationPeriod string
+	var rotationPeriod RotationPeriod
 
 	for _, o := range options {
 		switch o.Name() {
@@ -89,9 +89,9 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		case optKeySuffixOnCompression:
 			suffixOnCompression = o.Value().(string)
 		case optKeyRotationPeriod:
-			rotationPeriod = o.Value().(string)
+			valueInterfaceRotationPeriod := o.Value()
+			rotationPeriod = valueInterfaceRotationPeriod.(RotationPeriod)
 		}
-
 	}
 	for _, re := range patternConversionRegexps {
 		globPattern = re.ReplaceAllString(globPattern, "*")
@@ -121,7 +121,7 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		timeOnCompression:   timeOnCompression,
 		suffixOnCompression: suffixOnCompression,
 		rotationPattern:     rotationPattern,
-		rotationPeriod:      RotationPeriod(rotationPeriod),
+		rotationPeriod:      rotationPeriod,
 	}, nil
 }
 
