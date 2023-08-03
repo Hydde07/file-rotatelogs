@@ -54,6 +54,7 @@ type RotateLogs struct {
 	forceNewFile        bool
 	timeOnCompression   bool
 	suffixOnCompression string
+	rotationPeriod      RotationPeriod
 }
 
 // Clock is the interface used by the RotateLogs
@@ -70,6 +71,34 @@ var UTC = clockFn(func() time.Time { return time.Now().UTC() })
 // Local is an object satisfying the Clock interface, which
 // returns the current time in the local timezone
 var Local = clockFn(time.Now)
+
+// LocalHourly is an object satisfying the Clock interface, which
+// returns the current time in the local timezone, truncated to the
+// beginning of the hour
+var LocalHourly = clockFn(func() time.Time {
+	return time.Now().Truncate(time.Hour)
+})
+
+// LocalDaily is an object satisfying the Clock interface, which
+// returns the current time in the local timezone, truncated to the
+// beginning of the day
+var LocalDaily = clockFn(func() time.Time {
+	return time.Now().Truncate(24 * time.Hour)
+})
+
+// LocalWeekly is an object satisfying the Clock interface, which
+// returns the current time in the local timezone, truncated to the
+// beginning of the week
+var LocalWeekly = clockFn(func() time.Time {
+	return time.Now().Truncate(7 * 24 * time.Hour)
+})
+
+// LocalMonthly is an object satisfying the Clock interface, which
+// returns the current time in the local timezone, truncated to the
+// beginning of the month
+var LocalMonthly = clockFn(func() time.Time {
+	return time.Now().Truncate(30 * 24 * time.Hour)
+})
 
 // Option is used to pass optional arguments to
 // the RotateLogs constructor
