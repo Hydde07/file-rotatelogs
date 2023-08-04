@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Hydde07/file-rotatelogs/internal/fileutil"
+	"github.com/jonboulle/clockwork"
 	strftime "github.com/lestrrat-go/strftime"
 	"github.com/pkg/errors"
 )
@@ -91,6 +92,16 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		case optKeyRotationPeriod:
 			valueInterfaceRotationPeriod := o.Value()
 			rotationPeriod = valueInterfaceRotationPeriod.(RotationPeriod)
+			switch valueInterfaceRotationPeriod {
+			case "ROTATE_PERIOD_HOURLY":
+				rotationTime = 1 * time.Hour
+			case "ROTATE_PERIOD_DAILY":
+				rotationTime = 24 * time.Hour
+			case "ROTATE_PERIOD_MONTHLY":
+				rotationTime = 30 * 24 * time.Hour
+			case "ROTATE_PERIOD_YEARLY":
+				rotationTime = 365 * 24 * time.Hour
+			}
 		}
 	}
 	for _, re := range patternConversionRegexps {
@@ -159,20 +170,25 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 	baseRn := comparationBaseRn
 
 	if rl.rotationPeriod != "" {
+		var theTime time.Time
+		var multiplyConstant int64
 		switch rl.rotationPeriod {
 		case "ROTATE_PERIOD_HOURLY":
-			comparationBaseFn = fileutil.GenerateFn(rl.filenamePattern, LocalHourly, rl.rotationTime)
-			comparationBaseRn = fileutil.GenerateFn(rl.rotationPattern, LocalHourly, rl.rotationTime)
+			theTime, _ = time.Parse("2006-01-02 15", rl.clock.Now().Format("2006-01-02 15"))
+			multiplyConstant = 1
 		case "ROTATE_PERIOD_DAILY":
-			comparationBaseFn = fileutil.GenerateFn(rl.filenamePattern, LocalDaily, rl.rotationTime)
-			comparationBaseRn = fileutil.GenerateFn(rl.rotationPattern, LocalDaily, rl.rotationTime)
-		case "ROTATE_PERIOD_WEEKLY":
-			comparationBaseFn = fileutil.GenerateFn(rl.filenamePattern, LocalWeekly, rl.rotationTime)
-			comparationBaseRn = fileutil.GenerateFn(rl.rotationPattern, LocalWeekly, rl.rotationTime)
+			theTime, _ = time.Parse("2006-01-02", rl.clock.Now().Format("2006-01-02"))
+			multiplyConstant = 24
 		case "ROTATE_PERIOD_MONTHLY":
-			comparationBaseFn = fileutil.GenerateFn(rl.filenamePattern, LocalMonthly, rl.rotationTime)
-			comparationBaseRn = fileutil.GenerateFn(rl.rotationPattern, LocalMonthly, rl.rotationTime)
+			theTime, _ = time.Parse("2006-01", rl.clock.Now().Format("2006-01"))
+			multiplyConstant = 30 * 24
+		case "ROTATE_PERIOD_YEARLY":
+			theTime, _ = time.Parse("2006", rl.clock.Now().Format("2006"))
+			multiplyConstant = 365 * 24
 		}
+		fakeTime := clockwork.NewFakeClockAt(theTime)
+		comparationBaseFn = fileutil.GenerateFn(rl.filenamePattern, fakeTime, time.Hour*time.Duration(multiplyConstant)-1)
+		comparationBaseRn = fileutil.GenerateFn(rl.rotationPattern, fakeTime, time.Hour*time.Duration(multiplyConstant)-1)
 	}
 
 	filename := baseFn

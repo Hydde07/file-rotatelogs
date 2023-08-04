@@ -28,8 +28,8 @@ type RotationPeriod string
 const (
 	RotatePeriodHourly  RotationPeriod = "ROTATE_PERIOD_HOURLY"
 	RotatePeriodDaily   RotationPeriod = "ROTATE_PERIOD_DAILY"
-	RotatePeriodWeekly  RotationPeriod = "ROTATE_PERIOD_WEEKLY"
 	RotatePeriodMonthly RotationPeriod = "ROTATE_PERIOD_MONTHLY"
+	RotatePeriodYearly  RotationPeriod = "ROTATE_PERIOD_YEARLY"
 )
 
 // WithClock creates a new Option that sets a clock
