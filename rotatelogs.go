@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/Hydde07/file-rotatelogs/internal/fileutil"
-	"github.com/jonboulle/clockwork"
 	strftime "github.com/lestrrat-go/strftime"
 	"github.com/pkg/errors"
 )
@@ -49,7 +48,6 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 	var forceNewFile bool
 	var timeOnCompression bool
 	var suffixOnCompression string
-	var rotationPeriod RotationPeriod
 
 	for _, o := range options {
 		switch o.Name() {
@@ -89,20 +87,8 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 			timeOnCompression = true
 		case optKeySuffixOnCompression:
 			suffixOnCompression = o.Value().(string)
-		case optKeyRotationPeriod:
-			valueInterfaceRotationPeriod := o.Value()
-			rotationPeriod = valueInterfaceRotationPeriod.(RotationPeriod)
-			switch valueInterfaceRotationPeriod {
-			case "ROTATE_PERIOD_HOURLY":
-				rotationTime = 1 * time.Hour
-			case "ROTATE_PERIOD_DAILY":
-				rotationTime = 24 * time.Hour
-			case "ROTATE_PERIOD_MONTHLY":
-				rotationTime = 30 * 24 * time.Hour
-			case "ROTATE_PERIOD_YEARLY":
-				rotationTime = 365 * 24 * time.Hour
-			}
 		}
+
 	}
 	for _, re := range patternConversionRegexps {
 		globPattern = re.ReplaceAllString(globPattern, "*")
@@ -132,7 +118,6 @@ func New(p string, options ...Option) (*RotateLogs, error) {
 		timeOnCompression:   timeOnCompression,
 		suffixOnCompression: suffixOnCompression,
 		rotationPattern:     rotationPattern,
-		rotationPeriod:      rotationPeriod,
 	}, nil
 }
 
@@ -158,33 +143,10 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 	generation := rl.generation
 	previousFn := rl.curFn
 
-	// If we have a rotation period, we need to check if we need to rotate
-	// before we get the filename, because the filename won't use the fake
-	// clock in naming
-	comparationBaseFn := fileutil.GenerateFn(rl.filenamePattern, rl.clock, rl.rotationTime)
-	comparationBaseRn := fileutil.GenerateFn(rl.rotationPattern, rl.clock, rl.rotationTime)
-
 	// This filename contains the name of the "NEW" filename
 	// to log to, which may be newer than rl.currentFilename
-	baseFn := comparationBaseFn
-	baseRn := comparationBaseRn
-
-	if rl.rotationPeriod != "" {
-		var theTime time.Time
-		switch rl.rotationPeriod {
-		case "ROTATE_PERIOD_HOURLY":
-			theTime, _ = time.Parse("2006-01-02 15", rl.clock.Now().Format("2006-01-02 15"))
-		case "ROTATE_PERIOD_DAILY":
-			theTime, _ = time.Parse("2006-01-02", rl.clock.Now().Format("2006-01-02"))
-		case "ROTATE_PERIOD_MONTHLY":
-			theTime, _ = time.Parse("2006-01", rl.clock.Now().Format("2006-01"))
-		case "ROTATE_PERIOD_YEARLY":
-			theTime, _ = time.Parse("2006", rl.clock.Now().Format("2006"))
-		}
-		fakeTime := clockwork.NewFakeClockAt(theTime)
-		comparationBaseFn = fileutil.GenerateFn(rl.filenamePattern, fakeTime, rl.rotationTime)
-		comparationBaseRn = fileutil.GenerateFn(rl.rotationPattern, fakeTime, rl.rotationTime)
-	}
+	baseFn := fileutil.GenerateFn(rl.filenamePattern, rl.clock, rl.rotationTime)
+	baseRn := fileutil.GenerateFn(rl.rotationPattern, rl.clock, rl.rotationTime)
 
 	filename := baseFn
 	var forceNewFile bool
@@ -196,7 +158,7 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 		sizeRotation = true
 	}
 
-	if comparationBaseFn != rl.curBaseFn || comparationBaseRn != rl.curBaseRn {
+	if baseFn != rl.curBaseFn || baseRn != rl.curBaseRn {
 		if rl.compress {
 			// If compression is enabled, compress the previous file after it's rotated
 			if rl.curFn != "" {

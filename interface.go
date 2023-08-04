@@ -54,7 +54,6 @@ type RotateLogs struct {
 	forceNewFile        bool
 	timeOnCompression   bool
 	suffixOnCompression string
-	rotationPeriod      RotationPeriod
 }
 
 // Clock is the interface used by the RotateLogs

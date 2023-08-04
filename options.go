@@ -20,16 +20,6 @@ const (
 	optKeyTimeOnCompression   = "time-on-compression"
 	optKeySuffixOnCompression = "suffix-on-compression"
 	optKeyChangeGlobPattern   = "change-glob-pattern"
-	optKeyRotationPeriod      = "rotation-period"
-)
-
-type RotationPeriod string
-
-const (
-	RotatePeriodHourly  RotationPeriod = "ROTATE_PERIOD_HOURLY"
-	RotatePeriodDaily   RotationPeriod = "ROTATE_PERIOD_DAILY"
-	RotatePeriodMonthly RotationPeriod = "ROTATE_PERIOD_MONTHLY"
-	RotatePeriodYearly  RotationPeriod = "ROTATE_PERIOD_YEARLY"
 )
 
 // WithClock creates a new Option that sets a clock
@@ -68,12 +58,6 @@ func WithLinkName(s string) Option {
 // the file system.
 func WithMaxAge(d time.Duration) Option {
 	return option.New(optkeyMaxAge, d)
-}
-
-// WithRotationPeriod creates a new Option that sets the
-// time between rotation based on the given period.
-func WithRotationPeriod(d RotationPeriod) Option {
-	return option.New(optKeyRotationPeriod, d)
 }
 
 // WithRotationTime creates a new Option that sets the

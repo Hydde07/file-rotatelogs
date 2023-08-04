@@ -222,144 +222,6 @@ func TestLogRotate(t *testing.T) {
 	}
 }
 
-func TestLogRotateWithRotationPeriod(t *testing.T) {
-	testCases := []struct {
-		Name    string
-		FixArgs func([]rotatelogs.Option, string) []rotatelogs.Option
-	}{
-		{
-			Name: "With Rotation Period Hourly",
-			FixArgs: func(options []rotatelogs.Option, dir string) []rotatelogs.Option {
-				return append(options, rotatelogs.WithRotationPeriod(rotatelogs.RotatePeriodHourly))
-			},
-		},
-		{
-			Name: "With Rotation Period Daily",
-			FixArgs: func(options []rotatelogs.Option, dir string) []rotatelogs.Option {
-				return append(options, rotatelogs.WithRotationPeriod(rotatelogs.RotatePeriodDaily))
-			},
-		},
-		{
-			Name: "With Rotation Period Monthly",
-			FixArgs: func(options []rotatelogs.Option, dir string) []rotatelogs.Option {
-				return append(options, rotatelogs.WithRotationPeriod(rotatelogs.RotatePeriodMonthly))
-			},
-		},
-		{
-			Name: "With Rotation Period Yearly",
-			FixArgs: func(options []rotatelogs.Option, dir string) []rotatelogs.Option {
-				return append(options, rotatelogs.WithRotationPeriod(rotatelogs.RotatePeriodYearly))
-			},
-		},
-	}
-
-	for i, tc := range testCases {
-		i := i   // avoid lint errors
-		tc := tc // avoid lint errors
-
-		t.Run(tc.Name, func(t *testing.T) {
-			dir, err := os.MkdirTemp("", fmt.Sprintf("file-rotatelogs-test%d", i))
-			if !assert.NoError(t, err, "creating temporary directory should succeed") {
-				return
-			}
-			defer os.RemoveAll(dir)
-
-			dummyTime, _ := time.Parse("2006-01-02 15:04:05", "2023-12-31 23:00:00")
-			t.Logf("dummyTime: %s", dummyTime)
-			clock := clockwork.NewFakeClockAt(dummyTime)
-
-			options := []rotatelogs.Option{rotatelogs.WithClock(clock), rotatelogs.WithMaxAge(365 * 24 * time.Hour)}
-			if fn := tc.FixArgs; fn != nil {
-				options = fn(options, dir)
-			}
-
-			filename := "log%Y%m%d%H%M%S"
-
-			rl, err := rotatelogs.New(filepath.Join(dir, filename), options...)
-			if !assert.NoError(t, err, `rotatelogs.New should succeed`) {
-				return
-			}
-			defer rl.Close()
-
-			str := "Hello, World"
-			n, err := rl.Write([]byte(str))
-			if !assert.NoError(t, err, "rl.Write should succeed") {
-				return
-			}
-
-			if !assert.Len(t, str, n, "rl.Write should succeed") {
-				return
-			}
-
-			fn := rl.CurrentFileName()
-			if fn == "" {
-				t.Errorf("Could not get filename %s", fn)
-			}
-
-			files, err := os.ReadDir(dir)
-			if err != nil {
-				t.Errorf("Failed to read directory %s: %s", dir, err)
-			}
-
-			time.Sleep(2 * time.Second)
-			t.Logf("Found %d files in directory %s", len(files), dir)
-			for _, file := range files {
-				t.Logf("Found file %s", file.Name())
-				if file.Name() == fn {
-					t.Logf("Found current file %s in directory %s", fn, dir)
-				} else {
-					t.Logf("Found old file %s in directory %s", file.Name(), dir)
-					t.Logf("The file %s is different from %s", file.Name(), fn)
-				}
-			}
-
-			content, err := os.ReadFile(fn)
-			if err != nil {
-				t.Errorf("Failed to read file %s: %s", fn, err)
-			}
-
-			if string(content) != str {
-				t.Errorf(`File content does not match (was "%s")`, content)
-			}
-
-			err = os.Chtimes(fn, dummyTime, dummyTime)
-			if err != nil {
-				t.Errorf("Failed to change access/modification times for %s: %s", fn, err)
-			}
-
-			fi, err := os.Stat(fn)
-			if err != nil {
-				t.Errorf("Failed to stat %s: %s", fn, err)
-			}
-
-			if !fi.ModTime().Equal(dummyTime) {
-				t.Errorf("Failed to chtime for %s (expected %s, got %s)", fn, fi.ModTime(), dummyTime)
-			}
-
-			clock.Advance(time.Hour)
-
-			// This next Write() should trigger Rotate()
-			rl.Write([]byte(str))
-			newfn := rl.CurrentFileName()
-
-			if newfn == fn {
-				t.Errorf(`New file name and old file name should not match ("%s" != "%s")`, fn, newfn)
-			}
-
-			content, err = os.ReadFile(newfn)
-			if err != nil {
-				t.Errorf("Failed to read file %s: %s", newfn, err)
-			}
-
-			if string(content) != str {
-				t.Errorf(`File content does not match (was "%s" instead of "%s")`, content, str)
-			}
-
-			time.Sleep(time.Second)
-		})
-	}
-}
-
 func CreateRotationTestFile(dir string, base time.Time, d time.Duration, n int) {
 	timestamp := base
 	for i := 0; i < n; i++ {
@@ -760,4 +622,136 @@ func TestForceNewFile(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestLogForPeriods(t *testing.T) {
+	testCases := []struct {
+		Name        string
+		FixArgs     func([]rotatelogs.Option, string) []rotatelogs.Option
+		CheckExtras func(*testing.T, *rotatelogs.RotateLogs, string) bool
+	}{
+		{
+			Name: "Log Rotate For Hourly Periods",
+			FixArgs: func(options []rotatelogs.Option, dir string) []rotatelogs.Option {
+				return append(options, rotatelogs.WithRotationTime(time.Hour))
+			},
+		},
+		{
+			Name: "Log Rotate For Daily Periods",
+			FixArgs: func(options []rotatelogs.Option, dir string) []rotatelogs.Option {
+				return append(options, rotatelogs.WithRotationTime(24*time.Hour))
+			},
+		},
+		{
+			Name: "Log Rotate For Monthly Periods",
+			FixArgs: func(options []rotatelogs.Option, dir string) []rotatelogs.Option {
+				return append(options, rotatelogs.WithRotationTime(30*24*time.Hour))
+			},
+		},
+		{
+			Name: "Log Rotate For Yearly Periods",
+			FixArgs: func(options []rotatelogs.Option, dir string) []rotatelogs.Option {
+				return append(options, rotatelogs.WithRotationTime(365*24*time.Hour))
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		i := i   // avoid lint errors
+		tc := tc // avoid lint errors
+		t.Run(tc.Name, func(t *testing.T) {
+			dir, err := os.MkdirTemp("", fmt.Sprintf("file-rotatelogs-test%d", i))
+			if !assert.NoError(t, err, "creating temporary directory should succeed") {
+				return
+			}
+			defer os.RemoveAll(dir)
+
+			// Change current time, so we can safely purge old logs
+			dummyTime, _ := time.Parse("2006-01-02 15:04:05", "2020-11-29 22:59:59")
+
+			clock := clockwork.NewFakeClockAt(dummyTime)
+
+			options := []rotatelogs.Option{rotatelogs.WithClock(clock), rotatelogs.WithMaxAge(3 * 365 * 24 * time.Hour)}
+			if fn := tc.FixArgs; fn != nil {
+				options = fn(options, dir)
+			}
+
+			filename := "log%Y%m%d%H%M%S"
+
+			rl, err := rotatelogs.New(filepath.Join(dir, filename), options...)
+			if !assert.NoError(t, err, `rotatelogs.New should succeed`) {
+				return
+			}
+			defer rl.Close()
+
+			str := "Hello, World"
+			n, err := rl.Write([]byte(str))
+			if !assert.NoError(t, err, "rl.Write should succeed") {
+				return
+			}
+
+			if !assert.Len(t, str, n, "rl.Write should succeed") {
+				return
+			}
+
+			fn := rl.CurrentFileName()
+			if fn == "" {
+				t.Errorf("Could not get filename %s", fn)
+			}
+
+			content, err := os.ReadFile(fn)
+			if err != nil {
+				t.Errorf("Failed to read file %s: %s", fn, err)
+			}
+
+			if string(content) != str {
+				t.Errorf(`File content does not match (was "%s")`, content)
+			}
+
+			err = os.Chtimes(fn, dummyTime, dummyTime)
+			if err != nil {
+				t.Errorf("Failed to change access/modification times for %s: %s", fn, err)
+			}
+
+			fi, err := os.Stat(fn)
+			if err != nil {
+				t.Errorf("Failed to stat %s: %s", fn, err)
+			}
+
+			if !fi.ModTime().Equal(dummyTime) {
+				t.Errorf("Failed to chtime for %s (expected %s, got %s)", fn, fi.ModTime(), dummyTime)
+			}
+
+			switch tc.Name {
+			case "Log Rotate For Hourly Periods":
+				clock.Advance(2 * time.Second)
+			case "Log Rotate For Daily Periods":
+				clock.Advance(2 * time.Hour)
+			case "Log Rotate For Monthly Periods":
+				clock.Advance(2 * 24 * time.Hour)
+			case "Log Rotate For Yearly Periods":
+				clock.Advance(2 * 30 * 24 * time.Hour)
+			}
+
+			// This next Write() should trigger Rotate()
+			rl.Write([]byte(str))
+			newfn := rl.CurrentFileName()
+
+			if newfn == fn {
+				t.Errorf(`New file name and old file name should not match ("%s" != "%s")`, fn, newfn)
+			}
+
+			content, err = os.ReadFile(newfn)
+			if err != nil {
+				t.Errorf("Failed to read file %s: %s", newfn, err)
+			}
+
+			if string(content) != str {
+				t.Errorf(`File content does not match (was "%s" instead of "%s")`, content, str)
+			}
+
+			time.Sleep(time.Second)
+		},
+		)
+	}
 }
