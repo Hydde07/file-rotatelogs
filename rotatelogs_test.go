@@ -300,6 +300,8 @@ func TestLogRotateWithRotationPeriod(t *testing.T) {
 			if err != nil {
 				t.Errorf("Failed to read directory %s: %s", dir, err)
 			}
+
+			time.Sleep(2 * time.Second)
 			t.Logf("Found %d files in directory %s", len(files), dir)
 			for _, file := range files {
 				t.Logf("Found file %s", file.Name())

@@ -171,24 +171,19 @@ func (rl *RotateLogs) getWriterNolock(bailOnRotateFail, useGenerationalNames boo
 
 	if rl.rotationPeriod != "" {
 		var theTime time.Time
-		var multiplyConstant int64
 		switch rl.rotationPeriod {
 		case "ROTATE_PERIOD_HOURLY":
 			theTime, _ = time.Parse("2006-01-02 15", rl.clock.Now().Format("2006-01-02 15"))
-			multiplyConstant = 1
 		case "ROTATE_PERIOD_DAILY":
 			theTime, _ = time.Parse("2006-01-02", rl.clock.Now().Format("2006-01-02"))
-			multiplyConstant = 24
 		case "ROTATE_PERIOD_MONTHLY":
 			theTime, _ = time.Parse("2006-01", rl.clock.Now().Format("2006-01"))
-			multiplyConstant = 30 * 24
 		case "ROTATE_PERIOD_YEARLY":
 			theTime, _ = time.Parse("2006", rl.clock.Now().Format("2006"))
-			multiplyConstant = 365 * 24
 		}
 		fakeTime := clockwork.NewFakeClockAt(theTime)
-		comparationBaseFn = fileutil.GenerateFn(rl.filenamePattern, fakeTime, time.Hour*time.Duration(multiplyConstant)-1)
-		comparationBaseRn = fileutil.GenerateFn(rl.rotationPattern, fakeTime, time.Hour*time.Duration(multiplyConstant)-1)
+		comparationBaseFn = fileutil.GenerateFn(rl.filenamePattern, fakeTime, rl.rotationTime)
+		comparationBaseRn = fileutil.GenerateFn(rl.rotationPattern, fakeTime, rl.rotationTime)
 	}
 
 	filename := baseFn
